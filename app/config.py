@@ -16,7 +16,7 @@ class Config(BaseSettings):
     CHAT_MODEL: str = "llama3.1:8b"
     EMBEDDING_MODEL: str = "nomic-embeded-text"
     OLLAMA_URL: str = os.getenv("OLLAMA_URL") 
-    EMBEDDING_DIM: int = 768 #why this embedding dim 
+    EMBEDDING_DIM: int = 768 #The number 768 became a default industry standard due to Google's BERT architecture, which revolutionized natural language processing.
     KEYCLOAK_URL: str = os.getenv("KEYCLOAK_URL")
     KEYCLOAK_REALM: str = os.getenv("KEYCLOAK_REALM")
     KEYCLOAK_CLIENT_ID: str = os.getenv("KEYCLOAK_CLIENT_ID")
