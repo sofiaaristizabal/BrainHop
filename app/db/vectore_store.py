@@ -18,12 +18,12 @@ from typing import Optional
 import httpx
 from sqlalchemy import Column, DateTime, Float, Index, String, Text, delete, select
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Mapped, mapped_column, relationship, Session
 
 from pgvector.sqlalchemy import Vector
 
 from app.config import config
-from app.db import Base 
+from app.db.base import Base 
 
 #Creamos la tabla de embeddings
 
@@ -42,36 +42,36 @@ class EmbeddingChunk(Base):
 
     __tablename__="embedding_chunks"
 
-    id: Column = Column(
+    id: Mapped[str] = mapped_column(
         UUID(as_uuid=False), 
         primary_key=True, 
         default=lambda: str(uuid.uuid4())
     )
 
-    chat_id: Column = Column(
+    chat_id: Mapped[str]= mapped_column(
         String(36), 
         nullable=False, 
         index=True
     )
 
-    document_id: Column = Column(
+    document_id: Mapped[str]= mapped_column(
         String(36),
           nullable=False, 
           index=True
     )
 
-    source_filename: Column = Column( # The original filename — stored here so the agent can cite the source
+    source_filename:Mapped[str]= mapped_column( # The original filename — stored here so the agent can cite the source
         String(500), 
         nullable=False
     )
 
-    content: Column = Column( # The actual text content of this chunk. Returned alongside the embedding
+    content: Mapped[str]= mapped_column( # The actual text content of this chunk. Returned alongside the embedding
         Text, 
         nullable=False
     )
 
     #Posición del chunk en el documento de dpnde proviene 
-    chunk_index: Column = Column(
+    chunk_index: Mapped[str]= mapped_column(
         String(10),
         nullable=False
     )
@@ -82,7 +82,7 @@ class EmbeddingChunk(Base):
         nullable= False
     )
 
-    created_at: Column = Column(
+    created_at: Mapped[datetime]= mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
         nullable=False,
@@ -125,7 +125,7 @@ async def _get_embedding(text: str) -> list[float]:
 
     embedding: list[float] = data["embedding"]
 
-    if len(embedding) != config.EMBEDDING_MODEL:
+    if len(embedding) != config.EMBEDDING_DIM:
         raise ValueError(
             f"Embedding dimension mismatch: expected {config.EMBEDDING_DIM}, "
             f"got {len(embedding)}. Check EMBEDDING_MODEL and EMBEDDING_DIM in config."
@@ -140,7 +140,7 @@ class Vectorestore:
     """
 
     def __init__(self, db: Session) -> None:
-        self.db # recivimos la sesión de la base de datos por inyección de dependencias
+        self.db = db # recivimos la sesión de la base de datos por inyección de dependencias
     
 
     #WRITE
@@ -159,7 +159,7 @@ class Vectorestore:
         El metodo devuelve el numero de chunks guardados exitosamente 
         """
 
-        saved_content = 0
+        saved_count = 0
 
         for index, chunk_text in enumerate(chunks):
             if not chunk_text.strip():# Skip empty chunks that sometimes appear after splitting.
@@ -211,7 +211,7 @@ class Vectorestore:
             .limit(top_k)
         ) 
 
-        rows = self.db.excecute(stmt).fetchall()
+        rows = self.db.execute(stmt).fetchall()
 
         #convertimos la distancia a similitud y filtramos segun el threshol que habiamos definido en config
         results = []

@@ -189,7 +189,7 @@ class Message(Base):
         nullable=False
     )
 
-    chat: Mapped["Chat"] = mapped_column(
+    chat: Mapped["Chat"] = relationship(
         "Chat",
         back_populates="messages"
     )
