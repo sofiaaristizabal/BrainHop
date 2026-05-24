@@ -23,7 +23,8 @@ dependencies = [
     "langchain-community (>=0.4.2,<0.5.0)",
     "langchain-core (>=1.4.0,<2.0.0)",
     "langgraph (>=1.2.1,<2.0.0)",
-    "python-jose[cryptography] (>=3.5.0,<4.0.0)"
+    "python-jose[cryptography] (>=3.5.0,<4.0.0)",
+    "python-multipart (>=0.0.29,<0.0.30)"
 ]
 
 [tool.poetry]

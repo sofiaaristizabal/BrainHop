@@ -35,12 +35,18 @@ def get_chat(db: Session, chat_id: str, user: User):
     return chat
 
 def get_user_chats(db: Session, user: User) -> list[Chat]:
-    chats = db.query(Chat).filter(Chat.user_id == user.id).order_by(Chat.updated_at.desc()).all()
+    return (
+        db.query(Chat)
+        .filter(Chat.user_id == user.id)
+        .order_by(Chat.updated_at.desc())
+        .all()
+    )
+
 
 
 def delete_chat(db:Session, chat_id: str, user:User) ->None:
     """Eliminamos un chat y todos los datos asociados al chat"""
-    chat = get_chat(db, chat_id, User)
+    chat = get_chat(db, chat_id, user)
 
     try:
         embeddings = OllamaEmbeddings(

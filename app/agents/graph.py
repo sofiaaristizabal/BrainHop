@@ -11,7 +11,7 @@ from langgraph.graph import StateGraph, END
 from sqlalchemy.orm import Session
 
 from app.agents.state import ChatState, ContentGenerationState
-from app.agents.nodes.retreiver_node import retriever_node
+from app.agents.nodes.retriever_node import retriever_node
 from app.agents.nodes.guard_node import guard_node, route_after_guard
 from app.agents.nodes.generator_node import generator_node
 from app.agents.nodes.reject_node import reject_node
