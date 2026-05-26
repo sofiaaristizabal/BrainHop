@@ -22,7 +22,7 @@ services:
 
   ollama:
     image: ollama/ollama:latest
-    container_name: rag-ollama
+    container_name: rag-ollama-2
     restart: unless-stopped
     ports:
       - "11434:11434"
@@ -86,6 +86,24 @@ services:
         condition: service_healthy
       keycloak:
         condition: service_started
+    networks:
+      - brainhop_net
+  
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      args:
+        - REACT_APP_API_URL=http://localhost:8000
+        - REACT_APP_KEYCLOAK_URL=http://localhost:8882
+        - REACT_APP_KEYCLOAK_REALM=brainhop
+        - REACT_APP_KEYCLOAK_CLIENT_ID=brainhop-frontend
+    container_name: brainhop_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"   # Maps Nginx port 80 inside the container to port 3000 on your machine
+    depends_on:
+      - backend
     networks:
       - brainhop_net
 

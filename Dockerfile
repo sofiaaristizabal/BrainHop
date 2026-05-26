@@ -27,6 +27,6 @@ RUN poetry install --no-interaction --no-ansi
 
 EXPOSE 8000
 
-ENTRYPOINT ["uvicorn", "app.api.main:app"]
+ENTRYPOINT ["uvicorn", "app.main:app"]
 
 CMD ["--host", "0.0.0.0", "--port", "8000"]

@@ -45,7 +45,7 @@ def _get_vector_store(chat_id: str) -> PGVector:
     )
 
 
-async def ingest_document( db: Session, document_record: DocumentRecord,  file_bytes: bytes,) -> DocumentRecord:
+def ingest_document( db: Session, document_record: DocumentRecord,  file_bytes: bytes,) -> DocumentRecord:
     """
     Ejecuta el pipeline completo de ingesta para un documento.
 

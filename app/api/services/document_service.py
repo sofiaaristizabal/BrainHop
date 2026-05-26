@@ -5,7 +5,7 @@ document_service.py es la logica de negocio de los documentos
 import logging
 from fastapi import HTTPException, UploadFile, status, BackgroundTasks
 from sqlalchemy.orm import Session
- 
+import asyncio
 from app.config import config
 from app.db.models import DocumentRecord, User
 from app.ingestion.embedder import ingest_document, create_document_record
@@ -17,11 +17,21 @@ from langchain_postgres.vectorstores import PGVector
 
 logger = logging.getLogger(__name__)
 
+def get_chat_documents(db: Session, chat_id: str, user: User) -> list[DocumentRecord]:
+    """Retorna todos los documentos de un chat verificando ownership."""
+    get_chat(db, chat_id, user)  # verifica que el chat existe y pertenece al user
+    return (
+        db.query(DocumentRecord)
+        .filter(DocumentRecord.chat_id == chat_id)
+        .order_by(DocumentRecord.uploaded_at.desc())
+        .all()
+    )
+
 async def upload_document(db:Session, chat_id:str, file: UploadFile, user:User, background_task:BackgroundTasks) ->DocumentRecord:
     """
     Validamos el archivo, creamos el document record, disparamos la ingesta de documentos como una background task
     """
-
+    logger.info(f"entramos al metodo")
     #Verificamos primero que el chat exista
     get_chat(db, chat_id, user)
 
@@ -65,19 +75,19 @@ async def upload_document(db:Session, chat_id:str, file: UploadFile, user:User, 
 
     return record
 
-async def _run_ingestion_and_generate_content(db:Session, record: DocumentRecord, file_bytes: bytes, chat_id: str) ->None:
+def _run_ingestion_and_generate_content(db:Session, record: DocumentRecord, file_bytes: bytes, chat_id: str) ->None:
     """Coremos la ingesta completa y disparamos la generación de contenido, o sea, disparamos un flujo de langGraph"""
 
-    updated_record = await ingest_document(db=db, document_record=record, file_bytes=file_bytes)
+    updated_record = ingest_document(db=db, document_record=record, file_bytes=file_bytes)
  
     if updated_record.status == "ready":
         # Verificar si ya hay contenido generado para este chat
         chat = db.get(Chat, chat_id)
         if chat and not chat.is_ready:
             logger.info(f"Disparando generación de contenido para chat_id={chat_id}")
-            await _trigger_content_generation(db=db, chat_id=chat_id)
+            _trigger_content_generation(db=db, chat_id=chat_id)
 
-async def _trigger_content_generation(db: Session, chat_id: str) -> None:
+def _trigger_content_generation(db: Session, chat_id: str) -> None:
     """Corre el grafo de generación de contenido (flashcards, keywords, quiz)."""
     chat = db.get(Chat, chat_id)
     if not chat:
@@ -85,7 +95,7 @@ async def _trigger_content_generation(db: Session, chat_id: str) -> None:
  
     try:
         graph = build_content_graph(db)
-        await graph.ainvoke({
+        asyncio.run(graph.ainvoke({
             "chat_id": chat_id,
             "user_id": chat.user_id,
             "full_context": "",
@@ -93,7 +103,7 @@ async def _trigger_content_generation(db: Session, chat_id: str) -> None:
             "keywords": [],
             "quiz": [],
             "error": None,
-        })
+        }))
         logger.info(f"Contenido generado para chat_id={chat_id}")
         chat.is_ready = True
         db.commit()
